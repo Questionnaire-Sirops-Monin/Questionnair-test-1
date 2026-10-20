@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Questionnaire</title>
+<style>
+  :root {
+    --fond: #f6f5f2;
+    --carte: #ffffff;
+    --texte: #1f1f1f;
+    --discret: #6b6b6b;
+    --bordure: #dcdad5;
+    --accent: #2f5d8a;
+    --accent-texte: #ffffff;
+    --erreur: #b3261e;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --fond: #161616;
+      --carte: #1f1f1f;
+      --texte: #ececec;
+      --discret: #a0a0a0;
+      --bordure: #3a3a3a;
+      --accent: #7fb0e0;
+      --accent-texte: #10202f;
+      --erreur: #f2938c;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--fond);
+    color: var(--texte);
+    font: 17px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  main { max-width: 680px; margin: 0 auto; padding: 32px 16px 64px; }
+  h1 { font-size: 1.8rem; margin: 0 0 8px; }
+  .intro { color: var(--discret); margin: 0 0 28px; }
+  .question {
+    background: var(--carte);
+    border: 1px solid var(--bordure);
+    border-radius: 12px;
+    padding: 20px;
+    margin: 0 0 16px;
+  }
+  .question legend, .question > label.titre {
+    font-weight: 600;
+    display: block;
+    margin-bottom: 12px;
+    padding: 0;
+  }
+  fieldset.question { min-width: 0; }
+  fieldset.question legend { float: left; width: 100%; }
+  fieldset.question legend + * { clear: both; }
+  .obligatoire { color: var(--erreur); }
+  .option { display: flex; align-items: center; gap: 10px; padding: 6px 0; cursor: pointer; }
+  .option input { width: 18px; height: 18px; accent-color: var(--accent); margin: 0; }
+  input[type=text], input[type=email], textarea {
+    width: 100%;
+    padding: 10px 12px;
+    font: inherit;
+    color: var(--texte);
+    background: var(--fond);
+    border: 1px solid var(--bordure);
+    border-radius: 8px;
+  }
+  textarea { min-height: 110px; resize: vertical; }
+  input:focus-visible, textarea:focus-visible, button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .note { display: flex; gap: 8px; flex-wrap: wrap; }
+  .note label { position: relative; }
+  .note input { position: absolute; opacity: 0; }
+  .note span {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 44px; height: 44px;
+    border: 1px solid var(--bordure); border-radius: 8px;
+    cursor: pointer; font-weight: 600;
+  }
+  .note input:checked + span { background: var(--accent); color: var(--accent-texte); border-color: var(--accent); }
+  .note input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .echelle { display: flex; justify-content: space-between; color: var(--discret); font-size: 0.85rem; margin-top: 6px; max-width: 252px; }
+  button {
+    background: var(--accent); color: var(--accent-texte);
+    border: 0; border-radius: 8px;
+    padding: 12px 28px; font: inherit; font-weight: 600;
+    cursor: pointer;
+  }
+  button:disabled { opacity: 0.6; cursor: wait; }
+  .message { margin-top: 16px; }
+  .message.erreur { color: var(--erreur); }
+  .merci { text-align: center; padding: 48px 0; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+  <h1 id="titre"></h1>
+  <p class="intro" id="intro"></p>
+
+  <form id="formulaire" novalidate></form>
+
+  <div class="merci" id="merci" hidden>
+    <h2>Merci !</h2>
+    <p>Votre réponse a bien été envoyée.</p>
+  </div>
+</main>
+
+<script>
+// ================================================================
+//  PARTIE À MODIFIER : le titre, l'introduction et les questions
+// ================================================================
+const URL_GOOGLE = 'https://script.google.com/macros/s/AKfycbxBIsvdbHVYzVraEnpcWhhuzp0tGzmknmAH9sem7XbhWGEXBEmVrCUSFqLpcOghLXLm/exec';
+
+const TITRE = 'Questionnaire';
+const INTRODUCTION = 'Merci de prendre quelques minutes pour répondre. Vos réponses restent confidentielles.';
+
+// Types possibles : "texte" (une ligne), "paragraphe" (texte long),
+// "choix" (une seule réponse), "multiple" (plusieurs réponses),
+// "note" (de 1 à 5), "email"
+const QUESTIONS = [
+  { question: 'Quel est votre prénom ?', type: 'texte', obligatoire: true },
+  { question: 'Comment avez-vous connu notre projet ?', type: 'choix',
+    options: ['Bouche-à-oreille', 'Réseaux sociaux', 'Internet', 'Autre'], obligatoire: true },
+  { question: 'Quels sujets vous intéressent ?', type: 'multiple',
+    options: ['Sujet A', 'Sujet B', 'Sujet C'] },
+  { question: 'Quelle note donneriez-vous à votre expérience ?', type: 'note', obligatoire: true },
+  { question: 'Avez-vous des remarques ?', type: 'paragraphe' },
+];
+// ================================================================
+
+document.getElementById('titre').textContent = TITRE;
+document.getElementById('intro').textContent = INTRODUCTION;
+document.title = TITRE;
+
+const formulaire = document.getElementById('formulaire');
+
+QUESTIONS.forEach(function (q, i) {
+  const id = 'q' + i;
+  const groupe = q.type === 'choix' || q.type === 'multiple' || q.type === 'note';
+  const bloc = document.createElement(groupe ? 'fieldset' : 'div');
+  bloc.className = 'question';
+
+  const titre = document.createElement(groupe ? 'legend' : 'label');
+  if (!groupe) { titre.className = 'titre'; titre.htmlFor = id; }
+  titre.textContent = q.question + ' ';
+  if (q.obligatoire) {
+    const etoile = document.createElement('span');
+    etoile.className = 'obligatoire';
+    etoile.textContent = '*';
+    etoile.setAttribute('aria-label', 'obligatoire');
+    titre.appendChild(etoile);
+  }
+  bloc.appendChild(titre);
+
+  if (q.type === 'choix' || q.type === 'multiple') {
+    q.options.forEach(function (opt) {
+      const label = document.createElement('label');
+      label.className = 'option';
+      const input = document.createElement('input');
+      input.type = q.type === 'choix' ? 'radio' : 'checkbox';
+      input.name = q.question;
+      input.value = opt;
+      label.append(input, opt);
+      bloc.appendChild(label);
+    });
+  } else if (q.type === 'note') {
+    const ligne = document.createElement('div');
+    ligne.className = 'note';
+    for (let n = 1; n <= 5; n++) {
+      const label = document.createElement('label');
+      const input = document.createElement('input');
+      input.type = 'radio';
+      input.name = q.question;
+      input.value = n;
+      const chiffre = document.createElement('span');
+      chiffre.textContent = n;
+      label.append(input, chiffre);
+      ligne.appendChild(label);
+    }
+    const echelle = document.createElement('div');
+    echelle.className = 'echelle';
+    echelle.innerHTML = '<span>Pas du tout</span><span>Tout à fait</span>';
+    bloc.append(ligne, echelle);
+  } else {
+    const champ = document.createElement(q.type === 'paragraphe' ? 'textarea' : 'input');
+    if (q.type !== 'paragraphe') champ.type = q.type === 'email' ? 'email' : 'text';
+    champ.id = id;
+    champ.name = q.question;
+    bloc.appendChild(champ);
+  }
+
+  bloc.dataset.question = q.question;
+  bloc.dataset.obligatoire = q.obligatoire ? '1' : '';
+  formulaire.appendChild(bloc);
+});
+
+const bouton = document.createElement('button');
+bouton.type = 'submit';
+bouton.textContent = 'Envoyer';
+const message = document.createElement('p');
+message.className = 'message';
+message.setAttribute('role', 'status');
+formulaire.append(bouton, message);
+
+formulaire.addEventListener('submit', async function (e) {
+  e.preventDefault();
+  const donnees = new FormData(formulaire);
+
+  const manquante = QUESTIONS.find(function (q) {
+    return q.obligatoire && !donnees.getAll(q.question).some(function (v) { return String(v).trim(); });
+  });
+  if (manquante) {
+    message.className = 'message erreur';
+    message.textContent = 'Merci de répondre à la question : « ' + manquante.question + ' »';
+    return;
+  }
+
+  bouton.disabled = true;
+  message.className = 'message';
+  message.textContent = 'Envoi en cours…';
+  try {
+    await fetch(URL_GOOGLE, { method: 'POST', mode: 'no-cors', body: new URLSearchParams(donnees) });
+    formulaire.hidden = true;
+    document.getElementById('intro').hidden = true;
+    document.getElementById('merci').hidden = false;
+    window.scrollTo(0, 0);
+  } catch (err) {
+    bouton.disabled = false;
+    message.className = 'message erreur';
+    message.textContent = "L'envoi a échoué. Vérifiez votre connexion internet et réessayez.";
+  }
+});
+</script>
+</body>
+</html>
