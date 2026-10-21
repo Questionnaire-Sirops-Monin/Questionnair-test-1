@@ -266,7 +266,8 @@ const Q=[
  {id:"VW_BONMARCHE",type:"euros",text:"À quel prix trouveriez-vous ce sirop bon marché, c'est-à-dire une bonne affaire ?"},
  {id:"VW_CHER",type:"euros",text:"À partir de quel prix commenceriez-vous à le trouver cher, tout en envisageant quand même de l'acheter ?"},
  {id:"VW_TROPCHER",type:"euros",text:"À partir de quel prix le trouveriez-vous trop cher pour l'acheter ?"},
- // 3. Contrôle
+ // 3. Contrôle : manipulation check, la bonne réponse est « Oui » en version A et « Non » en version B
+ {id:"CONTROLE",text:"La bouteille qui vous a été présentée était en verre.",type:"single",options:["Oui","Non"]},
  {id:"NEGATIFS",text:"Quels sont, selon vous, les points négatifs de la bouteille présentée ?",type:"multi",shuffle:true,hint:"Plusieurs réponses possibles",options:["Elle paraît lourde","Elle paraît fragile","Elle fait bon marché","Elle risque d'altérer le goût du sirop","Elle est peu écologique","Elle semble peu pratique pour doser","Aucun point négatif"]},
  // 4. Habitudes
  {id:"USAGE",text:"Pour quoi utilisez-vous le plus le sirop Monin ?",type:"single",shuffle:true,options:["Dans le café ou le thé","Dans des cocktails","Dans des boissons sans alcool (eau, limonade, mocktails)","En pâtisserie ou en cuisine","Autre","Je n'utilise pas de sirop Monin"]},
